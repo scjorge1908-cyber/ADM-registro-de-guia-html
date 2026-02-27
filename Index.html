@@ -318,26 +318,88 @@
         }
 
         /* ================= TEXTOS PACIENTE ================= */
+        .paciente-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            min-height: 42px;
+        }
+
+        .paciente-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            overflow: hidden;
+        }
+
         .texto-paciente { 
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
-            font-size: 0.95rem; 
+            font-size: 0.92rem; 
             color: var(--primary); 
             font-weight: 700; 
-            display: block; 
+            flex-shrink: 1;
+            min-width: 0;
         }
 
         .texto-plano { 
             color: var(--text-muted); 
-            font-weight: 500; 
-            font-size: 0.82rem; 
-            display: inline-block; 
+            font-weight: 600; 
+            font-size: 0.78rem; 
+            white-space: nowrap;
+            flex-shrink: 0;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-whatsapp {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #25D366;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(37,211,102,0.3);
+            position: relative;
+        }
+
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(37,211,102,0.4);
+        }
+
+        .btn-whatsapp:active { transform: scale(0.95); }
+
+        .btn-whatsapp .material-icons { font-size: 18px; }
+
+        .btn-whatsapp.loading {
+            background: #94a3b8;
+            pointer-events: none;
+        }
+
+        .btn-whatsapp.loading .material-icons {
+            animation: spin 0.7s linear infinite;
         }
 
         .row-alta td { background-color: #fef2f2 !important; }
         .row-alta .texto-paciente, .row-alta .texto-plano { color: #dc2626 !important; font-weight: 800; }
+        .row-alta .texto-plano { background: #fee2e2; }
         .row-alta .input-guia { border-color: #fca5a5; color: #b91c1c; background-color: #fff; font-weight: 800; }
+        .row-alta .btn-whatsapp { background: #f87171; box-shadow: 0 2px 6px rgba(239,68,68,0.3); }
+        .row-alta .btn-whatsapp:hover { background: #dc2626; }
 
         /* ================= INPUTS GUIA ================= */
         .week-cell { display: flex; justify-content: center; gap: 4px; }
@@ -1117,7 +1179,7 @@
                 let planoExibicao = p.plano || "";
                 let sufixoAlta = temAlta ? " (ALTA)" : "";
 
-                tr.innerHTML = '<td class="col-paciente"><span class="texto-paciente">' + nomeExibicao + sufixoAlta + '</span> <span class="texto-plano">— ' + planoExibicao + '</span></td>';
+                tr.innerHTML = '<td class="col-paciente"><div class="paciente-cell"><button class="btn-whatsapp" onclick="abrirWhatsApp(this, \'' + escaparNomeParaJS(nomeExibicao) + '\')" title="Abrir WhatsApp"><span class="material-icons">chat</span></button><div class="paciente-info"><span class="texto-paciente">' + nomeExibicao + sufixoAlta + '</span><span class="texto-plano">' + planoExibicao + '</span></div></div></td>';
 
                 const semanas = [p.semana1, p.semana2, p.semana3, p.semana4, p.semana5];
                 semanas.forEach(val => {
@@ -1336,7 +1398,7 @@
             const mes = document.getElementById('selectMes').value;
             const ano = document.getElementById('selectAno').value;
             const nomeCell = tr.cells[0].querySelector('.texto-paciente').innerText.replace(" (ALTA)", ""); 
-            const planoCell = tr.cells[0].querySelector('.texto-plano').innerText.replace("— ", "").replace("- ", "");
+            const planoCell = tr.cells[0].querySelector('.texto-plano').innerText;
             
             const getVals = (idx) => {
                 let inputs = tr.cells[idx].querySelectorAll('input');
@@ -1666,6 +1728,58 @@
                 msg.style.transition = 'all 0.3s ease';
                 setTimeout(() => { if (msg.parentNode) msg.parentNode.removeChild(msg); }, 300);
             }, 5000);
+        }
+
+        // ==============================================================
+        // WHATSAPP - BUSCAR TELEFONE E ABRIR CONVERSA
+        // ==============================================================
+        function escaparNomeParaJS(nome) {
+            return nome.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        function abrirWhatsApp(btn, nomePaciente) {
+            if (!nomePaciente || nomePaciente.trim() === "") {
+                mostrarMensagem("Nome do paciente inválido!", "warning");
+                return;
+            }
+            
+            const psicologa = document.getElementById('selectPsicologa').value;
+            if (!psicologa) {
+                mostrarMensagem("Selecione uma psicóloga primeiro!", "warning");
+                return;
+            }
+            
+            // Estado de loading
+            btn.classList.add('loading');
+            const iconOriginal = btn.innerHTML;
+            btn.innerHTML = '<span class="material-icons">sync</span>';
+            
+            google.script.run.withSuccessHandler(function(resultado) {
+                btn.classList.remove('loading');
+                btn.innerHTML = iconOriginal;
+                
+                if (resultado.sucesso && resultado.telefone) {
+                    let tel = resultado.telefone;
+                    // Limpar telefone - remover tudo exceto números
+                    tel = tel.replace(/\D/g, '');
+                    
+                    // Se não começa com 55, adicionar código do Brasil
+                    if (!tel.startsWith('55')) {
+                        tel = '55' + tel;
+                    }
+                    
+                    // Abrir WhatsApp
+                    const url = 'https://wa.me/' + tel;
+                    window.open(url, '_blank');
+                    
+                } else {
+                    mostrarMensagem("📱 Telefone não encontrado para: " + nomePaciente, "warning");
+                }
+            }).withFailureHandler(function(erro) {
+                btn.classList.remove('loading');
+                btn.innerHTML = iconOriginal;
+                mostrarMensagem("❌ Erro ao buscar telefone: " + erro, "error");
+            }).buscarTelefonePaciente(psicologa, nomePaciente);
         }
 
         // ==============================================================
