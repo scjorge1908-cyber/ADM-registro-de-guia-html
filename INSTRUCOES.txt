@@ -1,0 +1,22 @@
+INSTRUÇÕES - ADICIONAR AO index.html
+=====================================
+
+Abra o index.html no GitHub (clique no lápis para editar).
+
+PROCURE esta linha (perto do início do arquivo):
+    <link rel="manifest" href="manifest.json">
+
+ADICIONE logo DEPOIS dela:
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+DEPOIS procure a tag </body> no FINAL do arquivo.
+
+ADICIONE ANTES de </body>:
+    <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+    </script>
+
+SALVE (Commit changes).
