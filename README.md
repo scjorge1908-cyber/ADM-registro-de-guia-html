@@ -1,0 +1,1 @@
+# ADM-registro-de-guia-html
