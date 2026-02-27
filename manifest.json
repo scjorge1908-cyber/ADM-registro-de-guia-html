@@ -1,0 +1,18 @@
+{
+  "name": "Hope - Gestão de Guias",
+  "short_name": "Hope",
+  "description": "Sistema de Gestão de Guias - Clínica Hope",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "LOGO_Marca_d_agua.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
